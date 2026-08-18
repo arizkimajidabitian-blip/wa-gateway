@@ -12,7 +12,7 @@
     /* Login Box */
     #login-box { background: white; padding: 30px 20px; border-radius: 12px; text-align: center; box-shadow: 0 4px 15px rgba(0,0,0,0.15); width: 90%; max-width: 360px; }
     #login-box h2 { color: #00a884; margin-bottom: 10px; }
-    #login-box input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; }
+    #login-box input { width: 100%; padding: 12px; margin: 15px 0; border: 1px solid #ccc; border-radius: 8px; font-size: 16px; outline: none; }
     #login-box button { width: 100%; padding: 12px; background: #00a884; color: white; border: none; border-radius: 8px; font-weight: bold; font-size: 16px; cursor: pointer; }
 
     /* Main Container */
@@ -113,13 +113,29 @@
     let chats = {};
     let activeTarget = null;
 
-    function login() {
+    async function login() {
       if (document.getElementById('passInput').value === SECRET_PASSWORD) {
         document.getElementById('login-box').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
+        
+        // Memuat riwayat permanen dari MongoDB
+        await loadHistoryFromDB();
+        
         initSocket();
       } else {
         alert('Password Salah!');
+      }
+    }
+
+    async function loadHistoryFromDB() {
+      try {
+        const res = await fetch(`${SERVER_URL}/messages`);
+        const data = await res.json();
+        data.forEach(msg => {
+          addMessage(msg.from, msg.text, msg.fromMe);
+        });
+      } catch (err) {
+        console.error("Gagal memuat riwayat dari DB:", err);
       }
     }
 
@@ -145,10 +161,7 @@
         }
       });
 
-      socket.on('history-message', (data) => {
-        addMessage(data.from, data.text, data.fromMe);
-      });
-
+      // Terima pesan baru secara real-time
       socket.on('incoming-message', (data) => {
         addMessage(data.from, data.text, data.fromMe);
       });
@@ -227,8 +240,7 @@
       if (!text || !activeTarget) return;
 
       input.value = '';
-      addMessage(activeTarget, text, true);
-
+      
       try {
         await fetch(`${SERVER_URL}/send-message`, {
           method: 'POST',
