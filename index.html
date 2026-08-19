@@ -232,8 +232,8 @@
 
   <script>
     // ================= CONFIG BACKEND =================
-    // PASTE URL RAILWAY BACKEND KAMU DI BAWAH INI:
-    const BACKEND_URL = "https://web-production-xxxx.up.railway.app"; 
+    // GANTI LINK DI BAWAH INI DENGAN DOMAIN RAILWAY BACKEND MU
+    const BACKEND_URL = "https://backend-wa-kamu.up.railway.app"; 
 
     const AUTH_PASS = "ar123";
     let socket;
@@ -260,7 +260,6 @@
       location.reload();
     }
 
-    // Auto-login kalau sudah pernah isi password
     if (localStorage.getItem('wa_gateway_auth') === 'true') {
       window.onload = () => initApp();
     }
@@ -336,7 +335,6 @@
         const initial = (c.name || c.jid).charAt(0).toUpperCase();
         const isActive = activeJid === c.jid ? 'active' : '';
         
-        // Cari pesan terakhir
         const lastMsg = allMessages.filter(m => m.chatJid === c.jid).pop();
         const lastText = lastMsg ? lastMsg.text : 'Klik untuk buka chat';
 
@@ -425,12 +423,14 @@
     }
 
     function showQrModal() {
-      if (currentQr) document.getElementById('qr-modal').style.display = 'flex';
-      else alert('WhatsApp sudah terhubung atau QR belum siap.');
+      document.getElementById('qr-modal').style.display = 'flex';
+      if (socket) socket.emit('request-qr');
     }
-    function hideQrModal() { document.getElementById('qr-modal').style.display = 'none'; }
+    
+    function hideQrModal() { 
+      document.getElementById('qr-modal').style.display = 'none'; 
+    }
 
-    // Helper Avatar Color
     function getAvatarColor(str) {
       const colors = ['#e542a3', '#1e90ff', '#2ed573', '#ffa500', '#ff4757', '#70a1ff', '#9b59b6'];
       let hash = 0;
