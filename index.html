@@ -9,7 +9,6 @@
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
     body { background: #0b141a; height: 100vh; display: flex; align-items: center; justify-content: center; }
     
-    /* LOGIN BOX BARU (V2.0 DARK NEON) */
     #login-box { 
       background: #111b21; 
       padding: 40px 25px; 
@@ -50,7 +49,6 @@
     }
     #login-box button:hover { background: #008f6f; }
 
-    /* MAIN CONTAINER */
     #app-container { display: none; width: 100%; height: 100vh; background: #fff; overflow: hidden; position: relative; }
     @media (min-width: 769px) {
       #app-container { width: 95%; max-width: 1200px; height: 90vh; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
@@ -101,7 +99,6 @@
 </head>
 <body>
 
-  <!-- LOGIN BOX DESAIN BARU -->
   <div id="login-box">
     <span class="badge">WA WEB LITE V2.0</span>
     <h2>Akses Gateway 🔒</h2>
@@ -172,9 +169,6 @@
         document.getElementById('app-container').style.display = 'block';
         
         initSocket();
-        await loadContactsFromDB();
-        await loadHistoryFromDB();
-        await loadStoriesFromDB();
       } else {
         alert('Password Salah!');
       }
@@ -200,6 +194,7 @@
           chats[chatJid].push({ fromMe: msg.fromMe, text: msg.text });
         });
         if (currentTab === 'chat') renderChatList();
+        if (activeTarget) renderMessages();
       } catch (err) { console.error("Gagal memuat riwayat DB:", err); }
     }
 
@@ -229,6 +224,13 @@
     function initSocket() {
       socket = io(SERVER_URL);
 
+      // SINKRONISASI OTOMATIS SAAT TERHUBUNG (PC/HP MANA PUN)
+      socket.on('connect', async () => {
+        await loadContactsFromDB();
+        await loadHistoryFromDB();
+        await loadStoriesFromDB();
+      });
+
       socket.on('status', (msg) => {
         document.getElementById('status-text').innerText = msg;
         document.getElementById('qr-modal').style.display = (msg === 'Terhubung') ? 'none' : 'flex';
@@ -255,7 +257,12 @@
         if (data.pushName) contactsMap[chatJid] = data.pushName;
 
         if (!chats[chatJid]) chats[chatJid] = [];
-        chats[chatJid].push({ fromMe: data.fromMe, text: data.text });
+        
+        // Cek duplikasi pesan
+        const isExist = chats[chatJid].some(m => m.text === data.text && m.fromMe === data.fromMe);
+        if (!isExist) {
+          chats[chatJid].push({ fromMe: data.fromMe, text: data.text });
+        }
         
         if (currentTab === 'chat') renderChatList();
         if (activeTarget === chatJid) renderMessages();
@@ -370,11 +377,6 @@
       if (!text || !activeTarget) return;
 
       input.value = '';
-
-      if (!chats[activeTarget]) chats[activeTarget] = [];
-      chats[activeTarget].push({ fromMe: true, text: text });
-      renderMessages();
-      renderChatList();
 
       try {
         await fetch(`${SERVER_URL}/send-message`, {
