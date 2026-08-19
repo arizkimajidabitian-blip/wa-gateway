@@ -242,20 +242,22 @@
 
   <script>
     // ================= CONFIG BACKEND =================
-    // URL RAILWAY BACKEND KAMU SUDAH TERPASANG PRESISI DI SINI:
     const BACKEND_URL = "https://wa-backend-production-9b30.up.railway.app"; 
 
-    const AUTH_PASS = "ar123";
+    // PASSWORD BARU DITERAPKAN DI SINI
+    const AUTH_PASS = "arz123";
+    
     let socket;
     let allContacts = [];
     let allMessages = [];
     let activeJid = "";
 
-    // --- AUTH LOGIC ---
+    // --- AUTH LOGIC PERKETAT ---
     function checkAuth() {
       const pass = document.getElementById('login-pass').value;
       if (pass === AUTH_PASS) {
-        localStorage.setItem('wa_gateway_auth', 'true');
+        localStorage.setItem('wa_gateway_auth', 'arz123');
+        document.getElementById('login-error').style.display = 'none';
         initApp();
       } else {
         document.getElementById('login-error').style.display = 'block';
@@ -269,9 +271,17 @@
       location.reload();
     }
 
-    if (localStorage.getItem('wa_gateway_auth') === 'true') {
-      window.onload = () => initApp();
-    }
+    // Cek status autentikasi saat pertama kali halaman dimuat
+    window.onload = () => {
+      const savedAuth = localStorage.getItem('wa_gateway_auth');
+      if (savedAuth === AUTH_PASS) {
+        initApp();
+      } else {
+        // Tampilkan modal login secara tegas jika password salah / belum diset
+        document.getElementById('login-overlay').style.display = 'flex';
+        document.getElementById('app-container').style.display = 'none';
+      }
+    };
 
     // --- APP INITIALIZATION ---
     function initApp() {
