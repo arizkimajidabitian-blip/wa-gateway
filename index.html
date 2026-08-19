@@ -30,9 +30,7 @@
     .login-card button {
       width: 100%; padding: 12px; background: #00a884; border: none;
       border-radius: 8px; color: #111b21; font-weight: bold; font-size: 15px; cursor: pointer;
-      transition: 0.2s;
     }
-    .login-card button:hover { background: #06cf9c; }
     #login-error { color: #f15c6d; font-size: 13px; margin-top: 10px; display: none; }
 
     /* ================= MAIN CONTAINER ================= */
@@ -80,7 +78,7 @@
     .contact-name { font-size: 16px; color: #e9edef; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .contact-sub { font-size: 13px; color: #8696a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
-    /* CHAT MAIN PANEL */
+    /* CHAT PANEL */
     #chat-panel { flex: 1; display: flex; flex-direction: column; background: #0b141a; position: relative; height: 100%; }
     
     #chat-panel::before {
@@ -123,9 +121,7 @@
       width: 42px; height: 42px; border-radius: 50%; background: #00a884; border: none;
       color: #111b21; font-size: 16px; cursor: pointer; display: flex;
       justify-content: center; align-items: center; flex-shrink: 0;
-      transition: 0.2s;
     }
-    .send-btn:hover { background: #06cf9c; }
 
     /* Empty State */
     .empty-chat {
@@ -134,7 +130,7 @@
     }
     .empty-chat i { font-size: 80px; color: #3b4a54; }
 
-    /* MODAL POPUPS */
+    /* Modals */
     .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;
@@ -144,7 +140,6 @@
       width: 100%; padding: 10px 12px; margin-top: 10px; border-radius: 6px; border: 1px solid #3b4a54;
       background: #111b21; color: #fff; font-size: 14px; outline: none;
     }
-    .modal-card input:focus { border-color: #00a884; }
     .qr-box { 
       width: 220px; height: 220px; margin: 15px auto; background: #fff; 
       border-radius: 8px; padding: 10px; display: flex; justify-content: center; align-items: center; 
@@ -152,7 +147,6 @@
     .qr-box img { width: 100%; height: 100%; display: none; }
     .qr-loading { color: #111b21; font-size: 14px; font-weight: bold; }
 
-    /* ================= RESPONSIVE MOBILE STYLES ================= */
     @media (max-width: 768px) {
       #sidebar { width: 100%; display: flex; }
       #chat-panel { width: 100%; display: none; position: absolute; top: 0; left: 0; z-index: 50; }
@@ -165,7 +159,7 @@
 </head>
 <body>
 
-  <!-- ================= LOGIN SCREEN ================= -->
+  <!-- LOGIN SCREEN -->
   <div id="login-overlay">
     <div class="login-card">
       <i class="fa-brands fa-whatsapp"></i>
@@ -176,7 +170,7 @@
     </div>
   </div>
 
-  <!-- ================= MAIN APP ================= -->
+  <!-- MAIN APP -->
   <div id="app-container">
     <!-- SIDEBAR -->
     <div id="sidebar">
@@ -210,14 +204,12 @@
 
     <!-- CHAT PANEL -->
     <div id="chat-panel">
-      <!-- Empty State Desktop -->
       <div class="empty-chat" id="empty-state">
         <i class="fa-brands fa-whatsapp"></i>
         <h2>WhatsApp Web Gateway</h2>
         <p>Kirim dan terima pesan secara real-time.<br>Pilih kontak di sebelah kiri untuk mulai mengobrol.</p>
       </div>
 
-      <!-- Main Chat Area -->
       <div id="active-chat-area" style="display: none; height: 100%; flex-direction: column;">
         <div class="chat-header">
           <div class="chat-header-info">
@@ -258,8 +250,8 @@
     <div class="modal-card">
       <h3 style="color:#e9edef;">Simpan Kontak Baru</h3>
       <p style="color:#8696a0; font-size:13px; margin-top:5px;">Kontak ini akan tersimpan permanen di database kamu.</p>
-      <input type="text" id="contact-name-input" placeholder="Nama Kontak (misal: Budi)">
-      <input type="text" id="contact-num-input" placeholder="Nomor WA (misal: 08123456789)">
+      <input type="text" id="contact-name-input" placeholder="Nama Kontak (misal: Abi)">
+      <input type="text" id="contact-num-input" placeholder="Nomor WA (misal: 083851922441)">
       <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
         <button onclick="saveContactToDb()" style="padding: 8px 20px; background:#00a884; color:#111b21; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">Simpan</button>
         <button onclick="hideAddContactModal()" style="padding: 8px 20px; background:#3b4a54; color:#fff; border:none; border-radius:6px; cursor:pointer;">Batal</button>
@@ -268,7 +260,6 @@
   </div>
 
   <script>
-    // Config Backend Railway
     const BACKEND_URL = "https://wa-backend-production-9b30.up.railway.app"; 
     const AUTH_PASS = "arz123";
     
@@ -277,7 +268,6 @@
     let allMessages = [];
     let activeJid = "";
 
-    // Security Autentikasi Password
     function checkAuth() {
       const pass = document.getElementById('login-pass').value;
       if (pass === AUTH_PASS) {
@@ -306,7 +296,6 @@
       }
     };
 
-    // Inisialisasi Aplikasi Utama
     function initApp() {
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('app-container').style.display = 'flex';
@@ -352,7 +341,6 @@
       loadMessages();
     }
 
-    // Ambil Data Kontak & Pesan dari Server
     async function loadContacts() {
       try {
         const res = await fetch(`${BACKEND_URL}/contacts`);
@@ -369,7 +357,6 @@
       } catch (err) { console.error('Gagal load pesan:', err); }
     }
 
-    // Render Kontak ke Sidebar
     function renderContacts(contacts) {
       const list = document.getElementById('contact-list');
       list.innerHTML = '';
@@ -400,7 +387,6 @@
       });
     }
 
-    // Pilih Kontak & Mode Responsif Mobile
     function selectContact(jid, name) {
       activeJid = jid;
       document.getElementById('empty-state').style.display = 'none';
@@ -422,7 +408,6 @@
       document.getElementById('app-container').classList.remove('chat-active');
     }
 
-    // Render Balon Chat
     function renderMessages() {
       const container = document.getElementById('messages-container');
       container.innerHTML = '';
@@ -444,7 +429,6 @@
       container.scrollTop = container.scrollHeight;
     }
 
-    // Kirim Pesan
     async function sendMessage() {
       const input = document.getElementById('message-input');
       const text = input.value.trim();
@@ -486,7 +470,6 @@
       }
     }
 
-    // Modal Simpan Kontak Baru Permanen
     function showAddContactModal() {
       document.getElementById('add-contact-modal').style.display = 'flex';
     }
@@ -514,15 +497,15 @@
         });
 
         const data = await res.json();
-        if (data.status) {
+        if (data.status && data.contact) {
           hideAddContactModal();
-          loadContacts();
+          await loadContacts();
           selectContact(data.contact.jid, data.contact.name);
         } else {
-          alert('Gagal menyimpan kontak!');
+          alert('Gagal menyimpan kontak: ' + (data.message || 'Error Database'));
         }
       } catch (err) {
-        alert('Terjadi kesalahan saat menyimpan kontak.');
+        alert('Terjadi kesalahan koneksi ke Server.');
       }
     }
 
