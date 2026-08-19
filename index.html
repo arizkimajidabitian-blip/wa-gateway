@@ -2,8 +2,8 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WhatsApp Web Gateway</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>WhatsApp Web Gateway Pro</title>
   <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <style>
@@ -17,8 +17,8 @@
       justify-content: center; align-items: center; flex-direction: column;
     }
     .login-card {
-      background: #202c33; padding: 30px 40px; border-radius: 12px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; width: 360px;
+      background: #202c33; padding: 30px; border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.5); text-align: center; width: 90%; max-width: 360px;
     }
     .login-card i { font-size: 50px; color: #00a884; margin-bottom: 15px; }
     .login-card h2 { margin-bottom: 20px; font-size: 20px; color: #e9edef; }
@@ -36,10 +36,10 @@
     #login-error { color: #f15c6d; font-size: 13px; margin-top: 10px; display: none; }
 
     /* ================= MAIN CONTAINER ================= */
-    #app-container { display: none; width: 100vw; height: 100vh; background: #111b21; flex-direction: row; }
+    #app-container { display: none; width: 100vw; height: 100vh; background: #111b21; flex-direction: row; position: relative; }
 
     /* SIDEBAR */
-    #sidebar { width: 380px; background: #111b21; border-right: 1px solid #222d34; display: flex; flex-direction: column; }
+    #sidebar { width: 380px; background: #111b21; border-right: 1px solid #222d34; display: flex; flex-direction: column; height: 100%; }
     
     .sidebar-header {
       height: 60px; background: #202c33; padding: 10px 16px; display: flex;
@@ -48,12 +48,12 @@
     .user-profile { display: flex; align-items: center; gap: 10px; font-weight: 500; font-size: 15px; }
     .avatar-icon {
       width: 40px; height: 40px; border-radius: 50%; background: #6b7c85;
-      display: flex; justify-content: center; align-items: center; color: #fff; font-weight: bold;
+      display: flex; justify-content: center; align-items: center; color: #fff; font-weight: bold; flex-shrink: 0;
     }
     .header-actions { display: flex; gap: 18px; color: #aebac1; font-size: 18px; cursor: pointer; }
     .header-actions i:hover { color: #e9edef; }
 
-    /* Connection Status Banner */
+    /* Status Banner */
     #status-banner {
       padding: 8px 16px; background: #182229; font-size: 13px; color: #8696a0;
       display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #222d34;
@@ -75,16 +75,14 @@
       display: flex; align-items: center; gap: 15px; padding: 12px 16px;
       border-bottom: 1px solid #222d34; cursor: pointer; transition: 0.1s;
     }
-    .contact-item:hover { background: #202c33; }
-    .contact-item.active { background: #2a3942; }
+    .contact-item:hover, .contact-item.active { background: #2a3942; }
     .contact-info { flex: 1; overflow: hidden; }
     .contact-name { font-size: 16px; color: #e9edef; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
     .contact-sub { font-size: 13px; color: #8696a0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; margin-top: 2px; }
 
     /* CHAT MAIN PANEL */
-    #chat-panel { flex: 1; display: flex; flex-direction: column; background: #0b141a; position: relative; }
+    #chat-panel { flex: 1; display: flex; flex-direction: column; background: #0b141a; position: relative; height: 100%; }
     
-    /* WhatsApp Background Pattern Effect */
     #chat-panel::before {
       content: ""; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       background-image: url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png');
@@ -96,15 +94,16 @@
       align-items: center; justify-content: space-between; z-index: 10; border-bottom: 1px solid #222d34;
     }
     .chat-header-info { display: flex; align-items: center; gap: 12px; }
+    .back-btn { display: none; font-size: 20px; color: #aebac1; cursor: pointer; margin-right: 5px; }
 
     #messages-container {
-      flex: 1; padding: 20px 5%; overflow-y: auto; display: flex;
+      flex: 1; padding: 15px 4%; overflow-y: auto; display: flex;
       flex-direction: column; gap: 8px; z-index: 5;
     }
 
     /* Chat Bubbles */
     .msg-bubble {
-      max-width: 65%; padding: 8px 12px; border-radius: 8px; font-size: 14.2px;
+      max-width: 75%; padding: 8px 12px; border-radius: 8px; font-size: 14.5px;
       line-height: 19px; position: relative; word-wrap: break-word;
     }
     .msg-bubble.sent { align-self: flex-end; background: #005c4b; color: #e9edef; border-top-right-radius: 0; }
@@ -113,39 +112,55 @@
 
     /* Input Area */
     .chat-input-area {
-      min-height: 62px; background: #202c33; padding: 10px 16px; display: flex;
-      align-items: center; gap: 12px; z-index: 10; border-top: 1px solid #222d34;
+      min-height: 62px; background: #202c33; padding: 10px 12px; display: flex;
+      align-items: center; gap: 10px; z-index: 10; border-top: 1px solid #222d34;
     }
     .chat-input-area input {
       flex: 1; background: #2a3942; border: none; outline: none; padding: 12px 16px;
-      border-radius: 8px; color: #e9edef; font-size: 15px;
+      border-radius: 20px; color: #e9edef; font-size: 15px;
     }
     .send-btn {
       width: 42px; height: 42px; border-radius: 50%; background: #00a884; border: none;
       color: #111b21; font-size: 16px; cursor: pointer; display: flex;
-      justify-content: center; align-items: center; transition: 0.2s;
+      justify-content: center; align-items: center; flex-shrink: 0;
+      transition: 0.2s;
     }
     .send-btn:hover { background: #06cf9c; }
 
     /* Empty State */
     .empty-chat {
       flex: 1; display: flex; justify-content: center; align-items: center;
-      flex-direction: column; color: #8696a0; gap: 15px; text-align: center; z-index: 5;
+      flex-direction: column; color: #8696a0; gap: 15px; text-align: center; z-index: 5; padding: 20px;
     }
     .empty-chat i { font-size: 80px; color: #3b4a54; }
 
-    /* QR Modal */
-    #qr-modal {
+    /* MODAL POPUPS */
+    .modal-overlay {
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;
     }
-    .qr-card { background: #202c33; padding: 30px; border-radius: 12px; text-align: center; width: 320px; }
+    .modal-card { background: #202c33; padding: 25px; border-radius: 12px; text-align: center; width: 90%; max-width: 320px; }
+    .modal-card input {
+      width: 100%; padding: 10px 12px; margin-top: 10px; border-radius: 6px; border: 1px solid #3b4a54;
+      background: #111b21; color: #fff; font-size: 14px; outline: none;
+    }
+    .modal-card input:focus { border-color: #00a884; }
     .qr-box { 
       width: 220px; height: 220px; margin: 15px auto; background: #fff; 
       border-radius: 8px; padding: 10px; display: flex; justify-content: center; align-items: center; 
     }
     .qr-box img { width: 100%; height: 100%; display: none; }
     .qr-loading { color: #111b21; font-size: 14px; font-weight: bold; }
+
+    /* ================= RESPONSIVE MOBILE STYLES ================= */
+    @media (max-width: 768px) {
+      #sidebar { width: 100%; display: flex; }
+      #chat-panel { width: 100%; display: none; position: absolute; top: 0; left: 0; z-index: 50; }
+      #app-container.chat-active #sidebar { display: none; }
+      #app-container.chat-active #chat-panel { display: flex; }
+      .back-btn { display: inline-block; }
+      .msg-bubble { max-width: 85%; }
+    }
   </style>
 </head>
 <body>
@@ -172,6 +187,7 @@
         </div>
         <div class="header-actions">
           <i class="fa-solid fa-qrcode" title="Scan QR" onclick="showQrModal()"></i>
+          <i class="fa-solid fa-user-plus" title="Simpan Kontak" onclick="showAddContactModal()"></i>
           <i class="fa-solid fa-plus" title="Chat Baru" onclick="promptNewChat()"></i>
           <i class="fa-solid fa-right-from-bracket" title="Logout" onclick="logout()"></i>
         </div>
@@ -194,17 +210,18 @@
 
     <!-- CHAT PANEL -->
     <div id="chat-panel">
-      <!-- State Kosong -->
+      <!-- Empty State Desktop -->
       <div class="empty-chat" id="empty-state">
         <i class="fa-brands fa-whatsapp"></i>
         <h2>WhatsApp Web Gateway</h2>
         <p>Kirim dan terima pesan secara real-time.<br>Pilih kontak di sebelah kiri untuk mulai mengobrol.</p>
       </div>
 
-      <!-- Main Chat Area (Default Hidden) -->
+      <!-- Main Chat Area -->
       <div id="active-chat-area" style="display: none; height: 100%; flex-direction: column;">
         <div class="chat-header">
           <div class="chat-header-info">
+            <i class="fa-solid fa-arrow-left back-btn" onclick="backToContacts()"></i>
             <div class="avatar-icon" id="active-avatar">?</div>
             <div>
               <div class="contact-name" id="active-title">-</div>
@@ -223,28 +240,36 @@
     </div>
   </div>
 
-  <!-- QR CODE MODAL -->
-  <div id="qr-modal">
-    <div class="qr-card">
+  <!-- QR MODAL -->
+  <div class="modal-overlay" id="qr-modal">
+    <div class="modal-card">
       <h3 style="color:#e9edef;">Scan QR Code WhatsApp</h3>
       <p style="color:#8696a0; font-size:13px; margin-top:5px;">Buka WA di HP > Perangkat Tertaut > Tautkan Perangkat</p>
-      
       <div class="qr-box">
         <span id="qr-loading-text" class="qr-loading">Menyiapkan QR...</span>
         <img id="qr-img" src="" alt="QR Code">
       </div>
+      <button onclick="hideQrModal()" style="padding: 8px 20px; background:#3b4a54; color:#fff; border:none; border-radius:6px; cursor:pointer;">Tutup</button>
+    </div>
+  </div>
 
-      <div>
-        <button onclick="hideQrModal()" style="padding: 8px 20px; background:#3b4a54; color:#fff; border:none; border-radius:6px; cursor:pointer;">Tutup</button>
+  <!-- TAMBAH KONTAK MODAL -->
+  <div class="modal-overlay" id="add-contact-modal">
+    <div class="modal-card">
+      <h3 style="color:#e9edef;">Simpan Kontak Baru</h3>
+      <p style="color:#8696a0; font-size:13px; margin-top:5px;">Kontak ini akan tersimpan permanen di database kamu.</p>
+      <input type="text" id="contact-name-input" placeholder="Nama Kontak (misal: Budi)">
+      <input type="text" id="contact-num-input" placeholder="Nomor WA (misal: 08123456789)">
+      <div style="margin-top: 15px; display: flex; gap: 10px; justify-content: center;">
+        <button onclick="saveContactToDb()" style="padding: 8px 20px; background:#00a884; color:#111b21; font-weight:bold; border:none; border-radius:6px; cursor:pointer;">Simpan</button>
+        <button onclick="hideAddContactModal()" style="padding: 8px 20px; background:#3b4a54; color:#fff; border:none; border-radius:6px; cursor:pointer;">Batal</button>
       </div>
     </div>
   </div>
 
   <script>
-    // ================= CONFIG BACKEND =================
+    // Config Backend Railway
     const BACKEND_URL = "https://wa-backend-production-9b30.up.railway.app"; 
-
-    // PASSWORD BARU DITERAPKAN DI SINI
     const AUTH_PASS = "arz123";
     
     let socket;
@@ -252,7 +277,7 @@
     let allMessages = [];
     let activeJid = "";
 
-    // --- AUTH LOGIC PERKETAT ---
+    // Security Autentikasi Password
     function checkAuth() {
       const pass = document.getElementById('login-pass').value;
       if (pass === AUTH_PASS) {
@@ -271,19 +296,17 @@
       location.reload();
     }
 
-    // Cek status autentikasi saat pertama kali halaman dimuat
     window.onload = () => {
       const savedAuth = localStorage.getItem('wa_gateway_auth');
       if (savedAuth === AUTH_PASS) {
         initApp();
       } else {
-        // Tampilkan modal login secara tegas jika password salah / belum diset
         document.getElementById('login-overlay').style.display = 'flex';
         document.getElementById('app-container').style.display = 'none';
       }
     };
 
-    // --- APP INITIALIZATION ---
+    // Inisialisasi Aplikasi Utama
     function initApp() {
       document.getElementById('login-overlay').style.display = 'none';
       document.getElementById('app-container').style.display = 'flex';
@@ -329,7 +352,7 @@
       loadMessages();
     }
 
-    // --- DATA FETCHING ---
+    // Ambil Data Kontak & Pesan dari Server
     async function loadContacts() {
       try {
         const res = await fetch(`${BACKEND_URL}/contacts`);
@@ -346,7 +369,7 @@
       } catch (err) { console.error('Gagal load pesan:', err); }
     }
 
-    // --- RENDER UI ---
+    // Render Kontak ke Sidebar
     function renderContacts(contacts) {
       const list = document.getElementById('contact-list');
       list.innerHTML = '';
@@ -377,6 +400,7 @@
       });
     }
 
+    // Pilih Kontak & Mode Responsif Mobile
     function selectContact(jid, name) {
       activeJid = jid;
       document.getElementById('empty-state').style.display = 'none';
@@ -388,10 +412,17 @@
       document.getElementById('active-avatar').innerText = name.charAt(0).toUpperCase();
       document.getElementById('active-avatar').style.background = getAvatarColor(jid);
 
+      document.getElementById('app-container').classList.add('chat-active');
+
       renderContacts(allContacts);
       renderMessages();
     }
 
+    function backToContacts() {
+      document.getElementById('app-container').classList.remove('chat-active');
+    }
+
+    // Render Balon Chat
     function renderMessages() {
       const container = document.getElementById('messages-container');
       container.innerHTML = '';
@@ -413,20 +444,27 @@
       container.scrollTop = container.scrollHeight;
     }
 
+    // Kirim Pesan
     async function sendMessage() {
       const input = document.getElementById('message-input');
       const text = input.value.trim();
       if (!text || !activeJid) return;
 
+      let targetNum = activeJid.replace(/[^0-9]/g, '');
+      if (targetNum.startsWith('0')) targetNum = '62' + targetNum.slice(1);
+
       input.value = '';
 
       try {
-        await fetch(`${BACKEND_URL}/send-message`, {
+        const res = await fetch(`${BACKEND_URL}/send-message`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ number: activeJid, message: text })
+          body: JSON.stringify({ number: targetNum, message: text })
         });
-      } catch (err) { alert('Gagal mengirim pesan!'); }
+        const data = await res.json();
+        if (!data.status) alert('Gagal mengirim pesan: ' + (data.message || 'Error'));
+        else loadMessages();
+      } catch (err) { alert('Gagal terhubung ke Server!'); }
     }
 
     function handleSendKey(e) { if (e.key === 'Enter') sendMessage(); }
@@ -440,10 +478,51 @@
     }
 
     function promptNewChat() {
-      const num = prompt("Masukkan nomor WhatsApp (contoh: 628123456789):");
+      const num = prompt("Masukkan nomor WhatsApp (contoh: 08123456789):");
       if (num) {
-        const cleaned = num.replace(/[^0-9]/g, '');
+        let cleaned = num.replace(/[^0-9]/g, '');
+        if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
         selectContact(cleaned, cleaned);
+      }
+    }
+
+    // Modal Simpan Kontak Baru Permanen
+    function showAddContactModal() {
+      document.getElementById('add-contact-modal').style.display = 'flex';
+    }
+
+    function hideAddContactModal() {
+      document.getElementById('add-contact-modal').style.display = 'none';
+      document.getElementById('contact-name-input').value = '';
+      document.getElementById('contact-num-input').value = '';
+    }
+
+    async function saveContactToDb() {
+      const name = document.getElementById('contact-name-input').value.trim();
+      const num = document.getElementById('contact-num-input').value.trim();
+
+      if (!name || !num) {
+        alert('Nama dan nomor HP wajib diisi!');
+        return;
+      }
+
+      try {
+        const res = await fetch(`${BACKEND_URL}/contacts`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ name, number: num })
+        });
+
+        const data = await res.json();
+        if (data.status) {
+          hideAddContactModal();
+          loadContacts();
+          selectContact(data.contact.jid, data.contact.name);
+        } else {
+          alert('Gagal menyimpan kontak!');
+        }
+      } catch (err) {
+        alert('Terjadi kesalahan saat menyimpan kontak.');
       }
     }
 
