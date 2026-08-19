@@ -68,7 +68,7 @@
   <!-- LOGIN PANEL -->
   <div id="login-box">
     <h2>WhatsApp Web 🔒</h2>
-    <input type="password" id="passInput" placeholder="Masukkan Password">
+    <input type="password" id="passInput" placeholder="Masukkan Password" onkeypress="if(event.key==='Enter') login()">
     <button onclick="login()">Masuk</button>
   </div>
 
@@ -113,15 +113,21 @@
     let chats = {};
     let activeTarget = null;
 
+    function formatNumber(num) {
+      if (!num) return '';
+      let cleaned = num.replace(/[^0-9]/g, '');
+      if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
+      return cleaned;
+    }
+
     async function login() {
       if (document.getElementById('passInput').value === SECRET_PASSWORD) {
         document.getElementById('login-box').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         
-        // Memuat riwayat permanen dari MongoDB
-        await loadHistoryFromDB();
-        
+        // Inisialisasi Socket dulu baru muat riwayat
         initSocket();
+        await loadHistoryFromDB();
       } else {
         alert('Password Salah!');
       }
@@ -131,9 +137,21 @@
       try {
         const res = await fetch(`${SERVER_URL}/messages`);
         const data = await res.json();
+        
+        // Clear data lokal sebelum memuat dari DB
+        chats = {};
+
         data.forEach(msg => {
-          addMessage(msg.from, msg.text, msg.fromMe);
+          // Mendukung schema baru (chatJid) maupun lama (from) jika ada
+          const chatJid = formatNumber(msg.chatJid || msg.from);
+          if (!chatJid) return;
+
+          if (!chats[chatJid]) chats[chatJid] = [];
+          chats[chatJid].push({ fromMe: msg.fromMe, text: msg.text });
         });
+
+        renderChatList();
+        if (activeTarget) renderMessages();
       } catch (err) {
         console.error("Gagal memuat riwayat dari DB:", err);
       }
@@ -163,14 +181,15 @@
 
       // Terima pesan baru secara real-time
       socket.on('incoming-message', (data) => {
-        addMessage(data.from, data.text, data.fromMe);
-      });
-    }
+        const chatJid = formatNumber(data.chatJid);
+        if (!chatJid) return;
 
-    function formatNumber(num) {
-      let cleaned = num.replace(/[^0-9]/g, '');
-      if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
-      return cleaned;
+        if (!chats[chatJid]) chats[chatJid] = [];
+        chats[chatJid].push({ fromMe: data.fromMe, text: data.text });
+        
+        renderChatList();
+        if (activeTarget === chatJid) renderMessages();
+      });
     }
 
     function startNewChat() {
@@ -192,15 +211,6 @@
 
     function closeChatMobile() {
       document.getElementById('chatPanel').classList.remove('active-mobile');
-    }
-
-    function addMessage(target, text, fromMe) {
-      const num = formatNumber(target);
-      if (!chats[num]) chats[num] = [];
-      chats[num].push({ fromMe, text });
-      
-      renderChatList();
-      if (activeTarget === num) renderMessages();
     }
 
     function renderChatList() {
@@ -236,7 +246,7 @@
 
     async function sendMsg() {
       const input = document.getElementById('msgInput');
-      const text = input.value;
+      const text = input.value.trim();
       if (!text || !activeTarget) return;
 
       input.value = '';
