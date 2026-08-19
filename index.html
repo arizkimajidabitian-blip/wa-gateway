@@ -111,6 +111,7 @@
     
     let socket;
     let chats = {};
+    let contactsMap = {};
     let activeTarget = null;
 
     function formatNumber(num) {
@@ -125,11 +126,23 @@
         document.getElementById('login-box').style.display = 'none';
         document.getElementById('app-container').style.display = 'block';
         
-        // Inisialisasi Socket dulu baru muat riwayat
         initSocket();
+        await loadContactsFromDB();
         await loadHistoryFromDB();
       } else {
         alert('Password Salah!');
+      }
+    }
+
+    async function loadContactsFromDB() {
+      try {
+        const res = await fetch(`${SERVER_URL}/contacts`);
+        const data = await res.json();
+        data.forEach(c => {
+          contactsMap[c.jid] = c.name;
+        });
+      } catch (err) {
+        console.error("Gagal load kontak:", err);
       }
     }
 
@@ -138,11 +151,8 @@
         const res = await fetch(`${SERVER_URL}/messages`);
         const data = await res.json();
         
-        // Clear data lokal sebelum memuat dari DB
         chats = {};
-
         data.forEach(msg => {
-          // Mendukung schema baru (chatJid) maupun lama (from) jika ada
           const chatJid = formatNumber(msg.chatJid || msg.from);
           if (!chatJid) return;
 
@@ -179,10 +189,18 @@
         }
       });
 
-      // Terima pesan baru secara real-time
+      socket.on('contacts-updated', async () => {
+        await loadContactsFromDB();
+        renderChatList();
+      });
+
       socket.on('incoming-message', (data) => {
         const chatJid = formatNumber(data.chatJid);
         if (!chatJid) return;
+
+        if (data.pushName) {
+          contactsMap[chatJid] = data.pushName;
+        }
 
         if (!chats[chatJid]) chats[chatJid] = [];
         chats[chatJid].push({ fromMe: data.fromMe, text: data.text });
@@ -203,7 +221,8 @@
 
     function selectChat(num) {
       activeTarget = num;
-      document.getElementById('activeChatHeader').innerText = num;
+      const displayName = contactsMap[num] ? `${contactsMap[num]} (${num})` : num;
+      document.getElementById('activeChatHeader').innerText = displayName;
       document.getElementById('chatPanel').classList.add('active-mobile');
       renderChatList();
       renderMessages();
@@ -219,11 +238,13 @@
       
       Object.keys(chats).forEach(num => {
         const lastMsg = chats[num][chats[num].length - 1]?.text || '';
+        const displayName = contactsMap[num] || num;
+        
         const div = document.createElement('div');
         div.className = `chat-item ${activeTarget === num ? 'active' : ''}`;
         div.onclick = () => selectChat(num);
         div.innerHTML = `
-          <div class="name">${num}</div>
+          <div class="name">${displayName}</div>
           <div class="last-msg">${lastMsg}</div>
         `;
         listEl.appendChild(div);
