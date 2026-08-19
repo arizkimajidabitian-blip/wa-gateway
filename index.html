@@ -2,404 +2,145 @@
 <html lang="id">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>WhatsApp Web Lite v3.1 Final Sync</title>
-  <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WA Web Gateway</title>
+  <script src="https://cdn.socket.io/4.7.2/socket.io.min.js"></script>
   <style>
-    * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
-    body { background: #0b141a; height: 100vh; display: flex; align-items: center; justify-content: center; }
-    
-    #login-box { 
-      background: #111b21; 
-      padding: 40px 25px; 
-      border-radius: 16px; 
-      text-align: center; 
-      box-shadow: 0 10px 25px rgba(0,0,0,0.5); 
-      width: 90%; 
-      max-width: 380px; 
-      border: 1px solid #222d34;
-    }
-    #login-box .badge { background: #00a884; color: #111b21; font-size: 11px; font-weight: bold; padding: 4px 8px; border-radius: 12px; display: inline-block; margin-bottom: 12px; }
-    #login-box h2 { color: #e9edef; margin-bottom: 8px; font-size: 22px; }
-    #login-box p { color: #8696a0; font-size: 13px; margin-bottom: 20px; }
-    #login-box input { 
-      width: 100%; 
-      padding: 14px; 
-      margin-bottom: 15px; 
-      background: #202c33; 
-      border: 1px solid #2a3942; 
-      border-radius: 10px; 
-      font-size: 16px; 
-      color: #e9edef; 
-      outline: none; 
-      text-align: center;
-    }
-    #login-box button { 
-      width: 100%; 
-      padding: 14px; 
-      background: #00a884; 
-      color: #111b21; 
-      border: none; 
-      border-radius: 10px; 
-      font-weight: bold; 
-      font-size: 16px; 
-      cursor: pointer; 
-    }
-
-    #app-container { display: none; width: 100%; height: 100vh; background: #fff; overflow: hidden; position: relative; }
-    @media (min-width: 769px) {
-      #app-container { width: 95%; max-width: 1200px; height: 90vh; border-radius: 12px; box-shadow: 0 6px 18px rgba(0,0,0,0.2); }
-    }
-
-    .layout { display: flex; height: 100%; width: 100%; position: relative; }
-
-    .sidebar { width: 100%; border-right: 1px solid #e9edef; background: #fff; display: flex; flex-direction: column; height: 100%; z-index: 1; }
-    @media (min-width: 769px) { .sidebar { width: 35%; } }
-
-    .sidebar-header { background: #f0f2f5; padding: 12px 16px; border-bottom: 1px solid #e9edef; font-size: 18px; font-weight: bold; color: #111b21; display: flex; justify-content: space-between; align-items: center; }
-    .tab-buttons { display: flex; gap: 6px; }
-    .tab-btn { padding: 6px 12px; border: none; border-radius: 6px; background: #e0e0e0; font-size: 13px; font-weight: bold; cursor: pointer; }
-    .tab-btn.active { background: #00a884; color: white; }
-
-    /* Indikator Log Status Sync */
-    #sync-log { background: #202c33; color: #00a884; font-size: 11px; padding: 4px 10px; text-align: center; }
-
-    .new-chat-box { padding: 10px; background: #fff; border-bottom: 1px solid #e9edef; display: flex; gap: 8px; }
-    .new-chat-box input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; }
-    .new-chat-box button { padding: 10px 14px; background: #00a884; color: white; border: none; border-radius: 8px; font-weight: bold; cursor: pointer; }
-    .chat-list { flex: 1; overflow-y: auto; }
-    .chat-item { padding: 14px 16px; border-bottom: 1px solid #f0f2f5; cursor: pointer; transition: background 0.2s; }
-    .chat-item:active, .chat-item.active { background: #f0f2f5; }
-    .chat-item .name { font-weight: 600; font-size: 16px; color: #111b21; margin-bottom: 4px; }
-    .chat-item .last-msg { font-size: 13px; color: #667781; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-    .chat-panel { width: 100%; display: flex; flex-direction: column; background: #efeae2; height: 100%; position: absolute; right: 0; top: 0; transform: translateX(100%); transition: transform 0.3s ease; z-index: 2; }
-    @media (min-width: 769px) {
-      .chat-panel { position: relative; transform: none !important; width: 65%; z-index: 1; }
-    }
-    .chat-panel.active-mobile { transform: translateX(0); }
-
-    .chat-header { background: #f0f2f5; padding: 10px 16px; border-bottom: 1px solid #e9edef; font-weight: bold; display: flex; align-items: center; gap: 12px; height: 60px; }
-    .back-btn { background: none; border: none; font-size: 22px; cursor: pointer; color: #00a884; display: block; padding: 4px 8px; }
-    @media (min-width: 769px) { .back-btn { display: none; } }
-
-    .messages-container { flex: 1; padding: 16px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
-    .msg-bubble { max-width: 80%; padding: 8px 12px; border-radius: 8px; font-size: 15px; line-height: 1.4; word-wrap: break-word; box-shadow: 0 1px 1px rgba(0,0,0,0.1); }
-    @media (min-width: 769px) { .msg-bubble { max-width: 65%; } }
-    .msg-bubble.me { background: #d9fdd3; align-self: flex-end; border-top-right-radius: 0; }
-    .msg-bubble.them { background: #fff; align-self: flex-start; border-top-left-radius: 0; }
-    
-    .input-area { background: #f0f2f5; padding: 10px; display: flex; gap: 8px; align-items: center; }
-    .input-area input { flex: 1; padding: 12px; border: 1px solid #ccc; border-radius: 20px; font-size: 15px; outline: none; }
-    .input-area button { padding: 10px 16px; background: #00a884; color: white; border: none; border-radius: 20px; font-weight: bold; cursor: pointer; }
-
-    #qr-modal { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(255,255,255,0.95); display: flex; flex-direction: column; align-items: center; justify-content: center; z-index: 10; padding: 20px; text-align: center; }
-    #qr-modal img { width: 220px; height: 220px; margin-top: 15px; border-radius: 8px; border: 1px solid #ddd; }
+    * { box-sizing: border-box; margin: 0; padding: 0; font-family: sans-serif; }
+    body { display: flex; height: 100vh; background: #f0f2f5; }
+    #sidebar { width: 300px; border-right: 1px solid #ccc; background: #fff; display: flex; flex-direction: column; }
+    #status-bar { padding: 10px; background: #075e54; color: #fff; text-align: center; font-size: 14px; }
+    #qr-container { padding: 15px; text-align: center; }
+    #qr-img { width: 180px; height: 180px; }
+    #contact-list { flex: 1; overflow-y: auto; list-style: none; }
+    .contact-item { padding: 12px; border-bottom: 1px solid #eee; cursor: pointer; }
+    .contact-item:hover, .contact-item.active { background: #e9edef; }
+    #chat-area { flex: 1; display: flex; flex-direction: column; background: #efeae2; }
+    #chat-header { padding: 15px; background: #f0f2f5; font-weight: bold; border-bottom: 1px solid #ccc; }
+    #messages { flex: 1; padding: 15px; overflow-y: auto; display: flex; flex-direction: column; gap: 8px; }
+    .msg { max-width: 60%; padding: 8px 12px; border-radius: 8px; font-size: 14px; }
+    .msg.me { align-self: flex-end; background: #d9fdd3; }
+    .msg.them { align-self: flex-start; background: #fff; }
+    #input-area { padding: 10px; background: #f0f2f5; display: flex; gap: 10px; }
+    #input-area input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px; outline: none; }
+    #input-area button { padding: 10px 20px; background: #00a884; color: #fff; border: none; border-radius: 20px; cursor: pointer; }
   </style>
 </head>
 <body>
 
-  <div id="login-box">
-    <span class="badge">WA WEB LITE V3.1 FINAL SYNC</span>
-    <h2>Akses Gateway 🔒</h2>
-    <p>Masukkan kata sandi untuk masuk ke panel</p>
-    <input type="password" id="passInput" placeholder="••••••••" onkeypress="if(event.key==='Enter') login()">
-    <button onclick="login()">Masuk Sistem</button>
+  <div id="sidebar">
+    <div id="status-bar">Menghubungkan...</div>
+    <div id="qr-container" style="display: none;">
+      <p style="font-size: 12px; margin-bottom: 5px;">Scan QR Code ini:</p>
+      <img id="qr-img" src="" alt="QR Code">
+    </div>
+    <ul id="contact-list"></ul>
   </div>
 
-  <div id="app-container">
-    <div id="qr-modal" style="display:none;">
-      <h3 id="status-text">Menghubungkan...</h3>
-      <img id="qr-img" src="" style="display:none;">
-    </div>
-
-    <div class="layout">
-      <div class="sidebar">
-        <div class="sidebar-header">
-          <span>WA Web</span>
-          <div class="tab-buttons">
-            <button class="tab-btn active" id="btn-tab-chat" onclick="switchTab('chat')">Chat</button>
-            <button class="tab-btn" id="btn-tab-story" onclick="switchTab('story')">Story</button>
-          </div>
-        </div>
-        
-        <div id="sync-log">Status: Mengirim data ke server...</div>
-
-        <div class="new-chat-box" id="newChatSection">
-          <input type="tel" id="newNumber" placeholder="Nomor baru (08xxx)">
-          <button onclick="startNewChat()">+ Chat</button>
-        </div>
-        
-        <div class="chat-list" id="chatList"></div>
-      </div>
-
-      <div class="chat-panel" id="chatPanel">
-        <div class="chat-header">
-          <button class="back-btn" onclick="closeChatMobile()">←</button>
-          <span id="activeChatHeader">Pilih Obrolan</span>
-        </div>
-        <div class="messages-container" id="messagesBox"></div>
-        <div class="input-area" id="inputAreaSection">
-          <input type="text" id="msgInput" placeholder="Ketik pesan..." onkeypress="if(event.key==='Enter') sendMsg()">
-          <button onclick="sendMsg()">Kirim</button>
-        </div>
-      </div>
+  <div id="chat-area">
+    <div id="chat-header">Pilih Kontak untuk Memulai Chat</div>
+    <div id="messages"></div>
+    <div id="input-area">
+      <input type="text" id="target-number" placeholder="Nomor (628xxx)" style="width: 120px; flex: none;">
+      <input type="text" id="message-text" placeholder="Ketik pesan...">
+      <button onclick="sendMessage()">Kirim</button>
     </div>
   </div>
 
   <script>
-    const SECRET_PASSWORD = "ar123";
-    const SERVER_URL = "https://wa-backend-production-9b30.up.railway.app";
+    // GANTI LINK DI BAWAL INI DENGAN URL BACKEND RAILWAY KAMU
+    const BACKEND_URL = "https://web-production-xxxx.up.railway.app"; 
     
-    let socket;
-    let chats = {};
-    let contactsMap = {};
-    let stories = [];
-    let activeTarget = null;
-    let currentTab = 'chat';
+    const socket = io(BACKEND_URL);
+    let allMessages = [];
+    let selectedJid = "";
 
-    function logStatus(msg) {
-      document.getElementById('sync-log').innerText = `Sync Log: ${msg}`;
-    }
+    // Socket listeners
+    socket.on('status', status => {
+      document.getElementById('status-bar').innerText = status;
+    });
 
-    function formatNumber(num) {
-      if (!num) return '';
-      let cleaned = num.replace(/[^0-9]/g, '');
-      if (cleaned.startsWith('0')) cleaned = '62' + cleaned.slice(1);
-      return cleaned;
-    }
-
-    async function login() {
-      if (document.getElementById('passInput').value === SECRET_PASSWORD) {
-        document.getElementById('login-box').style.display = 'none';
-        document.getElementById('app-container').style.display = 'block';
-        
-        initSocket();
+    socket.on('qr', qrBase64 => {
+      const qrBox = document.getElementById('qr-container');
+      if (qrBase64) {
+        qrBox.style.display = 'block';
+        document.getElementById('qr-img').src = qrBase64;
       } else {
-        alert('Password Salah!');
+        qrBox.style.display = 'none';
       }
-    }
+    });
 
-    async function syncAllDataFromDB() {
-      logStatus("Memuat Kontak...");
-      await loadContactsFromDB();
-      logStatus("Memuat Riwayat Chat...");
-      await loadHistoryFromDB();
-      logStatus("Memuat Story WA...");
-      await loadStoriesFromDB();
-      logStatus("Semua Data Tersinkronisasi ✅");
-    }
+    socket.on('contacts-updated', () => loadContacts());
+    socket.on('incoming-message', msg => {
+      allMessages.push(msg);
+      if (selectedJid === msg.chatJid) renderMessages();
+    });
 
-    async function loadContactsFromDB() {
+    // Ambil Data dari MongoDB via Backend
+    async function loadContacts() {
       try {
-        const res = await fetch(`${SERVER_URL}/contacts`);
-        const data = await res.json();
-        data.forEach(c => { contactsMap[c.jid] = c.name; });
-      } catch (err) { logStatus("Gagal Load Kontak"); }
-    }
-
-    async function loadHistoryFromDB() {
-      try {
-        const res = await fetch(`${SERVER_URL}/messages`);
-        const data = await res.json();
-        chats = {};
-        data.forEach(msg => {
-          const chatJid = formatNumber(msg.chatJid || msg.from);
-          if (!chatJid) return;
-          if (!chats[chatJid]) chats[chatJid] = [];
-          chats[chatJid].push({ fromMe: msg.fromMe, text: msg.text });
+        const res = await fetch(`${BACKEND_URL}/contacts`);
+        const contacts = await res.json();
+        const list = document.getElementById('contact-list');
+        list.innerHTML = '';
+        contacts.forEach(c => {
+          const li = document.createElement('li');
+          li.className = `contact-item ${selectedJid === c.jid ? 'active' : ''}`;
+          li.innerText = c.name || c.jid;
+          li.onclick = () => selectContact(c.jid, c.name);
+          list.appendChild(li);
         });
-        if (currentTab === 'chat') renderChatList();
-        if (activeTarget) renderMessages();
-      } catch (err) { logStatus("Gagal Load Messages"); }
+      } catch (err) { console.error('Error load contacts:', err); }
     }
 
-    async function loadStoriesFromDB() {
+    async function loadMessages() {
       try {
-        const res = await fetch(`${SERVER_URL}/stories`);
-        stories = await res.json();
-        if (currentTab === 'story') renderStoryList();
-      } catch (err) { logStatus("Gagal Load Stories"); }
+        const res = await fetch(`${BACKEND_URL}/messages`);
+        allMessages = await res.json();
+        renderMessages();
+      } catch (err) { console.error('Error load messages:', err); }
     }
 
-    function switchTab(tab) {
-      currentTab = tab;
-      document.getElementById('btn-tab-chat').classList.toggle('active', tab === 'chat');
-      document.getElementById('btn-tab-story').classList.toggle('active', tab === 'story');
-      
-      const newChatSec = document.getElementById('newChatSection');
-      if (tab === 'chat') {
-        newChatSec.style.display = 'flex';
-        renderChatList();
-      } else {
-        newChatSec.style.display = 'none';
-        renderStoryList();
-      }
-    }
-
-    function initSocket() {
-      socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
-
-      socket.on('connect', async () => {
-        logStatus("Terhubung ke Server, Memulai Sync...");
-        await syncAllDataFromDB();
-      });
-
-      socket.on('status', (msg) => {
-        document.getElementById('status-text').innerText = msg;
-        document.getElementById('qr-modal').style.display = (msg === 'Terhubung') ? 'none' : 'flex';
-      });
-
-      socket.on('qr', (qrBase64) => {
-        const qrImg = document.getElementById('qr-img');
-        if (qrBase64) {
-          qrImg.src = qrBase64;
-          qrImg.style.display = 'block';
-        } else {
-          qrImg.style.display = 'none';
-        }
-      });
-
-      socket.on('contacts-updated', async () => {
-        await syncAllDataFromDB();
-      });
-
-      socket.on('incoming-message', (data) => {
-        const chatJid = formatNumber(data.chatJid);
-        if (!chatJid) return;
-        if (data.pushName) contactsMap[chatJid] = data.pushName;
-
-        if (!chats[chatJid]) chats[chatJid] = [];
-        
-        const isExist = chats[chatJid].some(m => m.text === data.text && m.fromMe === data.fromMe);
-        if (!isExist) {
-          chats[chatJid].push({ fromMe: data.fromMe, text: data.text });
-        }
-        
-        if (currentTab === 'chat') renderChatList();
-        if (activeTarget === chatJid) renderMessages();
-      });
-
-      socket.on('incoming-story', (storyData) => {
-        stories.unshift(storyData);
-        if (currentTab === 'story') renderStoryList();
-      });
-    }
-
-    function startNewChat() {
-      const input = document.getElementById('newNumber');
-      if (!input.value) return;
-      const num = formatNumber(input.value);
-      if (!chats[num]) chats[num] = [];
-      selectChat(num);
-      input.value = '';
-    }
-
-    function selectChat(num) {
-      activeTarget = num;
-      const displayName = contactsMap[num] ? `${contactsMap[num]} (${num})` : num;
-      document.getElementById('activeChatHeader').innerText = displayName;
-      document.getElementById('inputAreaSection').style.display = 'flex';
-      document.getElementById('chatPanel').classList.add('active-mobile');
-      renderChatList();
+    function selectContact(jid, name) {
+      selectedJid = jid;
+      document.getElementById('chat-header').innerText = name || jid;
+      document.getElementById('target-number').value = jid;
+      loadContacts();
       renderMessages();
     }
 
-    function closeChatMobile() {
-      document.getElementById('chatPanel').classList.remove('active-mobile');
-    }
-
-    function renderChatList() {
-      const listEl = document.getElementById('chatList');
-      listEl.innerHTML = '';
-      
-      const allJids = Array.from(new Set([...Object.keys(chats), ...Object.keys(contactsMap)]));
-
-      if (allJids.length === 0) {
-        listEl.innerHTML = '<div style="padding:20px; color:#888; text-align:center;">Belum ada kontak / chat</div>';
-        return;
-      }
-
-      allJids.forEach(num => {
-        const lastMsg = (chats[num] && chats[num].length > 0) ? chats[num][chats[num].length - 1].text : 'Klik untuk chat';
-        const displayName = contactsMap[num] ? `${contactsMap[num]}` : num;
-        
-        const div = document.createElement('div');
-        div.className = `chat-item ${activeTarget === num ? 'active' : ''}`;
-        div.onclick = () => selectChat(num);
-        div.innerHTML = `
-          <div class="name">${displayName}</div>
-          <div class="last-msg">${lastMsg}</div>
-        `;
-        listEl.appendChild(div);
-      });
-    }
-
-    function renderStoryList() {
-      const listEl = document.getElementById('chatList');
-      listEl.innerHTML = '';
-
-      if (stories.length === 0) {
-        listEl.innerHTML = '<div style="padding:20px; color:#888; text-align:center;">Belum ada Story WA masuk</div>';
-        return;
-      }
-
-      stories.forEach(st => {
-        const name = contactsMap[st.senderJid] || st.senderName || st.senderJid;
-        const time = new Date(st.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-        
-        const div = document.createElement('div');
-        div.className = 'chat-item';
-        div.onclick = () => {
-          activeTarget = null;
-          document.getElementById('activeChatHeader').innerText = `Story dari ${name}`;
-          document.getElementById('inputAreaSection').style.display = 'none';
-          document.getElementById('chatPanel').classList.add('active-mobile');
-          
-          const box = document.getElementById('messagesBox');
-          box.innerHTML = `<div class="msg-bubble them" style="align-self:center; background:#fff; font-size:16px;">
-            <b>${name}</b> (${time}):<br><br>${st.text}
-          </div>`;
-        };
-        div.innerHTML = `
-          <div class="name">🟢 ${name}</div>
-          <div class="last-msg">${st.text}</div>
-        `;
-        listEl.appendChild(div);
-      });
-    }
-
     function renderMessages() {
-      const box = document.getElementById('messagesBox');
+      const box = document.getElementById('messages');
       box.innerHTML = '';
-      if (!activeTarget || !chats[activeTarget]) return;
+      if (!selectedJid) return;
 
-      chats[activeTarget].forEach(m => {
+      const filtered = allMessages.filter(m => m.chatJid === selectedJid);
+      filtered.forEach(m => {
         const div = document.createElement('div');
-        div.className = `msg-bubble ${m.fromMe ? 'me' : 'them'}`;
+        div.className = `msg ${m.fromMe ? 'me' : 'them'}`;
         div.innerText = m.text;
         box.appendChild(div);
       });
       box.scrollTop = box.scrollHeight;
     }
 
-    async function sendMsg() {
-      const input = document.getElementById('msgInput');
-      const text = input.value.trim();
-      if (!text || !activeTarget) return;
+    async function sendMessage() {
+      const number = document.getElementById('target-number').value;
+      const message = document.getElementById('message-text').value;
+      if (!number || !message) return alert('Isi nomor dan pesan!');
 
-      input.value = '';
+      await fetch(`${BACKEND_URL}/send-message`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ number, message })
+      });
 
-      try {
-        await fetch(`${SERVER_URL}/send-message`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ number: activeTarget, message: text })
-        });
-      } catch (err) {
-        alert('Gagal mengirim pesan');
-      }
+      document.getElementById('message-text').value = '';
     }
+
+    // Initial Load
+    loadContacts();
+    loadMessages();
   </script>
 </body>
 </html>
