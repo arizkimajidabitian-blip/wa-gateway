@@ -480,6 +480,7 @@
       document.getElementById('contact-num-input').value = '';
     }
 
+    // Fungsi Simpan Kontak dengan Detail Error Log
     async function saveContactToDb() {
       const name = document.getElementById('contact-name-input').value.trim();
       const num = document.getElementById('contact-num-input').value.trim();
@@ -493,19 +494,27 @@
         const res = await fetch(`${BACKEND_URL}/contacts`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ name, number: num })
+          body: JSON.stringify({ name: name, number: num })
         });
 
-        const data = await res.json();
+        const textResponse = await res.text();
+        let data;
+        try {
+          data = JSON.parse(textResponse);
+        } catch(e) {
+          alert("Response Server Bukan JSON: " + textResponse.substring(0, 100));
+          return;
+        }
+
         if (data.status && data.contact) {
           hideAddContactModal();
           await loadContacts();
           selectContact(data.contact.jid, data.contact.name);
         } else {
-          alert('Gagal menyimpan kontak: ' + (data.message || 'Error Database'));
+          alert('Detail Error: ' + (data.message || 'Gagal menyimpan ke DB'));
         }
       } catch (err) {
-        alert('Terjadi kesalahan koneksi ke Server.');
+        alert('Terjadi kesalahan koneksi ke Server Railway!');
       }
     }
 
