@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>WhatsApp Web Lite v3.0 Sync</title>
+  <title>WhatsApp Web Lite v3.1 Final Sync</title>
   <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
   <style>
     * { box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; margin: 0; padding: 0; }
@@ -34,7 +34,6 @@
       outline: none; 
       text-align: center;
     }
-    #login-box input:focus { border-color: #00a884; }
     #login-box button { 
       width: 100%; 
       padding: 14px; 
@@ -45,7 +44,6 @@
       font-weight: bold; 
       font-size: 16px; 
       cursor: pointer; 
-      transition: 0.2s;
     }
 
     #app-container { display: none; width: 100%; height: 100vh; background: #fff; overflow: hidden; position: relative; }
@@ -62,6 +60,9 @@
     .tab-buttons { display: flex; gap: 6px; }
     .tab-btn { padding: 6px 12px; border: none; border-radius: 6px; background: #e0e0e0; font-size: 13px; font-weight: bold; cursor: pointer; }
     .tab-btn.active { background: #00a884; color: white; }
+
+    /* Indikator Log Status Sync */
+    #sync-log { background: #202c33; color: #00a884; font-size: 11px; padding: 4px 10px; text-align: center; }
 
     .new-chat-box { padding: 10px; background: #fff; border-bottom: 1px solid #e9edef; display: flex; gap: 8px; }
     .new-chat-box input { flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 8px; font-size: 14px; outline: none; }
@@ -99,7 +100,7 @@
 <body>
 
   <div id="login-box">
-    <span class="badge">WA WEB LITE V3.0 FULL SYNC</span>
+    <span class="badge">WA WEB LITE V3.1 FINAL SYNC</span>
     <h2>Akses Gateway 🔒</h2>
     <p>Masukkan kata sandi untuk masuk ke panel</p>
     <input type="password" id="passInput" placeholder="••••••••" onkeypress="if(event.key==='Enter') login()">
@@ -122,6 +123,8 @@
           </div>
         </div>
         
+        <div id="sync-log">Status: Mengirim data ke server...</div>
+
         <div class="new-chat-box" id="newChatSection">
           <input type="tel" id="newNumber" placeholder="Nomor baru (08xxx)">
           <button onclick="startNewChat()">+ Chat</button>
@@ -155,6 +158,10 @@
     let activeTarget = null;
     let currentTab = 'chat';
 
+    function logStatus(msg) {
+      document.getElementById('sync-log').innerText = `Sync Log: ${msg}`;
+    }
+
     function formatNumber(num) {
       if (!num) return '';
       let cleaned = num.replace(/[^0-9]/g, '');
@@ -174,9 +181,13 @@
     }
 
     async function syncAllDataFromDB() {
+      logStatus("Memuat Kontak...");
       await loadContactsFromDB();
+      logStatus("Memuat Riwayat Chat...");
       await loadHistoryFromDB();
+      logStatus("Memuat Story WA...");
       await loadStoriesFromDB();
+      logStatus("Semua Data Tersinkronisasi ✅");
     }
 
     async function loadContactsFromDB() {
@@ -184,7 +195,7 @@
         const res = await fetch(`${SERVER_URL}/contacts`);
         const data = await res.json();
         data.forEach(c => { contactsMap[c.jid] = c.name; });
-      } catch (err) { console.error("Gagal load kontak:", err); }
+      } catch (err) { logStatus("Gagal Load Kontak"); }
     }
 
     async function loadHistoryFromDB() {
@@ -200,7 +211,7 @@
         });
         if (currentTab === 'chat') renderChatList();
         if (activeTarget) renderMessages();
-      } catch (err) { console.error("Gagal memuat riwayat DB:", err); }
+      } catch (err) { logStatus("Gagal Load Messages"); }
     }
 
     async function loadStoriesFromDB() {
@@ -208,7 +219,7 @@
         const res = await fetch(`${SERVER_URL}/stories`);
         stories = await res.json();
         if (currentTab === 'story') renderStoryList();
-      } catch (err) { console.error("Gagal load story:", err); }
+      } catch (err) { logStatus("Gagal Load Stories"); }
     }
 
     function switchTab(tab) {
@@ -227,10 +238,10 @@
     }
 
     function initSocket() {
-      socket = io(SERVER_URL);
+      socket = io(SERVER_URL, { transports: ['websocket', 'polling'] });
 
-      // SINKRONISASI OTOMATIS SETIAP KALI TERHUBUNG
       socket.on('connect', async () => {
+        logStatus("Terhubung ke Server, Memulai Sync...");
         await syncAllDataFromDB();
       });
 
@@ -253,7 +264,6 @@
         await syncAllDataFromDB();
       });
 
-      // TANGKAP BROADCAST PESAN REALTIME DI HP & PC
       socket.on('incoming-message', (data) => {
         const chatJid = formatNumber(data.chatJid);
         if (!chatJid) return;
@@ -261,7 +271,6 @@
 
         if (!chats[chatJid]) chats[chatJid] = [];
         
-        // Mencegah duplikasi pesan di UI
         const isExist = chats[chatJid].some(m => m.text === data.text && m.fromMe === data.fromMe);
         if (!isExist) {
           chats[chatJid].push({ fromMe: data.fromMe, text: data.text });
