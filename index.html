@@ -139,8 +139,13 @@
       display: none; position: fixed; top: 0; left: 0; width: 100vw; height: 100vh;
       background: rgba(0,0,0,0.8); z-index: 10000; justify-content: center; align-items: center;
     }
-    .qr-card { background: #202c33; padding: 30px; border-radius: 12px; text-align: center; }
-    .qr-card img { width: 220px; height: 220px; border-radius: 8px; margin: 15px 0; background: #fff; padding: 10px; }
+    .qr-card { background: #202c33; padding: 30px; border-radius: 12px; text-align: center; width: 320px; }
+    .qr-box { 
+      width: 220px; height: 220px; margin: 15px auto; background: #fff; 
+      border-radius: 8px; padding: 10px; display: flex; justify-content: center; align-items: center; 
+    }
+    .qr-box img { width: 100%; height: 100%; display: none; }
+    .qr-loading { color: #111b21; font-size: 14px; font-weight: bold; }
   </style>
 </head>
 <body>
@@ -223,7 +228,12 @@
     <div class="qr-card">
       <h3 style="color:#e9edef;">Scan QR Code WhatsApp</h3>
       <p style="color:#8696a0; font-size:13px; margin-top:5px;">Buka WA di HP > Perangkat Tertaut > Tautkan Perangkat</p>
-      <img id="qr-img" src="" alt="QR Code">
+      
+      <div class="qr-box">
+        <span id="qr-loading-text" class="qr-loading">Menyiapkan QR...</span>
+        <img id="qr-img" src="" alt="QR Code">
+      </div>
+
       <div>
         <button onclick="hideQrModal()" style="padding: 8px 20px; background:#3b4a54; color:#fff; border:none; border-radius:6px; cursor:pointer;">Tutup</button>
       </div>
@@ -232,15 +242,14 @@
 
   <script>
     // ================= CONFIG BACKEND =================
-    // GANTI LINK DI BAWAH INI DENGAN DOMAIN RAILWAY BACKEND MU
-    const BACKEND_URL = "https://backend-wa-kamu.up.railway.app"; 
+    // URL RAILWAY BACKEND KAMU SUDAH TERPASANG PRESISI DI SINI:
+    const BACKEND_URL = "https://wa-backend-production-9b30.up.railway.app"; 
 
     const AUTH_PASS = "ar123";
     let socket;
     let allContacts = [];
     let allMessages = [];
     let activeJid = "";
-    let currentQr = null;
 
     // --- AUTH LOGIC ---
     function checkAuth() {
@@ -283,12 +292,18 @@
       });
 
       socket.on('qr', qrBase64 => {
-        currentQr = qrBase64;
+        const qrImg = document.getElementById('qr-img');
+        const qrText = document.getElementById('qr-loading-text');
+
         if (qrBase64) {
-          document.getElementById('qr-img').src = qrBase64;
+          qrImg.src = qrBase64;
+          qrImg.style.display = 'block';
+          qrText.style.display = 'none';
           showQrModal();
         } else {
-          hideQrModal();
+          qrImg.style.display = 'none';
+          qrText.style.display = 'inline';
+          qrText.innerText = "Sudah Terhubung";
         }
       });
 
@@ -326,7 +341,7 @@
       const list = document.getElementById('contact-list');
       list.innerHTML = '';
 
-      if (contacts.length === 0) {
+      if (!contacts || contacts.length === 0) {
         list.innerHTML = `<div style="padding:20px; text-align:center; color:#8696a0; font-size:14px;">Belum ada kontak / chat</div>`;
         return;
       }
@@ -345,7 +360,7 @@
           <div class="avatar-icon" style="background:${getAvatarColor(c.jid)}">${initial}</div>
           <div class="contact-info">
             <div class="contact-name">${c.name || c.jid}</div>
-            <div class="contact-sub">${lastText}</div>
+            <div class="contact-sub">${escapeHtml(lastText)}</div>
           </div>
         `;
         list.appendChild(li);
@@ -439,6 +454,7 @@
     }
 
     function escapeHtml(text) {
+      if (!text) return '';
       return text.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
     }
   </script>
